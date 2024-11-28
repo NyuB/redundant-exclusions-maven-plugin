@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>nyub</groupId>
+  <artifactId>redundant</artifactId>
+  <version>1.0.0</version>
+  <name>Valid exclusions with transitive resolutions</name>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.14</version>
+      <exclusions>
+        <exclusion>
+          <!--  This dependency is also a transitive one of via httpmime declared below, the exclusion should be valid since versions diverge -->
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpmime</artifactId>
+      <version>4.0.3</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>nyub</groupId>
+        <artifactId>redundant-exclusions-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <configuration/>
+      </plugin>
+    </plugins>
+  </build>
+</project>

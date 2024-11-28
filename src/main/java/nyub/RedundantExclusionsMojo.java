@@ -3,6 +3,8 @@ package nyub;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.plugin.AbstractMojo;
@@ -22,7 +24,7 @@ import org.eclipse.aether.util.filter.DependencyFilterUtils;
 @Mojo(
         name = "redundant-exclusions",
         requiresDependencyResolution = ResolutionScope.RUNTIME,
-        defaultPhase = LifecyclePhase.VALIDATE)
+        defaultPhase = LifecyclePhase.TEST_COMPILE)
 public class RedundantExclusionsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     MavenProject project;
@@ -46,9 +48,9 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     private List<RemoteRepository> remoteRepos;
 
     public void execute() {
-        @SuppressWarnings("unchecked")
-        final List<Dependency> all = project.getDependencies();
-        for (Dependency dependency : all) {
+        final Set<Artifact> allArtifacts = project.getArtifacts();
+        final List<Dependency> allDependencies = project.getDependencies();
+        for (Dependency dependency : allDependencies) {
             for (Exclusion exclusion : dependency.getExclusions()) {
                 final var maybeVersion = excludedVersion(exclusion, dependency);
                 if (maybeVersion.isEmpty()) {
@@ -57,7 +59,7 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                                             "Dependency %s  is not a dependency of %s",
                                             formatExclusion(exclusion),
                                             formatDependency(dependency)));
-                } else if (!inclusionWouldClash(exclusion, maybeVersion.get(), all)) {
+                } else if (!inclusionWouldClash(exclusion, maybeVersion.get(), allArtifacts)) {
                     getLog().error(
                                     String.format(
                                             "Dependency %s is excluded from %s but it would not"
@@ -70,8 +72,9 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     }
 
     private boolean inclusionWouldClash(
-            Exclusion exclusion, String version, List<Dependency> dependencies) {
-        for (Dependency dependency : dependencies) {
+            Exclusion exclusion, String version, Set<Artifact> dependencies) {
+
+        for (Artifact dependency : dependencies) {
             if (exclusionMatches(exclusion, dependency)) {
                 if (!version.equals(dependency.getVersion())) {
                     return true;
@@ -106,11 +109,23 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                 optionalSuffix);
     }
 
+    private String formatArtifact(Artifact dependency) {
+        var optionalSuffix = "";
+        if (dependency.getClassifier() != null) optionalSuffix += ":" + dependency.getClassifier();
+        if (dependency.getType().equals("jar")) optionalSuffix += ":" + dependency.getType();
+        return String.format(
+                "%s:%s:%s%s",
+                dependency.getGroupId(),
+                dependency.getArtifactId(),
+                dependency.getVersion(),
+                optionalSuffix);
+    }
+
     private String formatExclusion(Exclusion exclusion) {
         return String.format("%s:%s", exclusion.getGroupId(), exclusion.getArtifactId());
     }
 
-    private boolean exclusionMatches(Exclusion exclusion, Dependency dependency) {
+    private boolean exclusionMatches(Exclusion exclusion, Artifact dependency) {
         if (!exclusion.getGroupId().equals(dependency.getGroupId())) return false;
         if (!exclusion.getArtifactId().equals(dependency.getArtifactId())) return false;
         return true;
