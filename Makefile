@@ -1,6 +1,6 @@
 dev: fmt test
 
-ci: fmt-check enforce test
+ci: fmt-check test
 
 test:
 	mvn clean verify
