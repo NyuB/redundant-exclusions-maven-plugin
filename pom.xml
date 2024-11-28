@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>nyub</groupId>
+  <groupId>com.github.nyub</groupId>
   <artifactId>redundant-exclusions-maven-plugin</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>redundant-exclusions-maven-plugin Maven Mojo</name>
   <url>http://maven.apache.org</url>
+  <developers>
+    <developer>
+      <name>Brice Decaestecker</name>
+      <url>https://github.com/NyuB</url>
+    </developer>
+  </developers>
+  <issueManagement>
+    <url>https://github.com/NyuB/redundant-exclusions-maven-plugin/issues</url>
+  </issueManagement>
   <properties>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
