@@ -26,24 +26,14 @@ import org.eclipse.aether.util.filter.DependencyFilterUtils;
         requiresDependencyResolution = ResolutionScope.RUNTIME,
         defaultPhase = LifecyclePhase.TEST_COMPILE)
 public class RedundantExclusionsMojo extends AbstractMojo {
+    @Component private RepositorySystem repoSystem;
+
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     MavenProject project;
 
-    /**
-     * The entry point to Aether, i.e. the component doing all the work.
-     *
-     * @component
-     */
-    @Component private RepositorySystem repoSystem;
-
-    /** The current repository/network configuration of Maven. */
     @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
     private RepositorySystemSession repoSession;
 
-    /**
-     * The project's remote repositories to use for the resolution of plugins and their
-     * dependencies.
-     */
     @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
 
@@ -71,19 +61,6 @@ public class RedundantExclusionsMojo extends AbstractMojo {
         }
     }
 
-    private boolean inclusionWouldClash(
-            Exclusion exclusion, String version, Set<Artifact> dependencies) {
-
-        for (Artifact dependency : dependencies) {
-            if (exclusionMatches(exclusion, dependency)) {
-                if (!version.equals(dependency.getVersion())) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private Optional<String> excludedVersion(Exclusion exclusion, Dependency dependency) {
         final var all = getDependencies(dependency);
         return all.stream()
@@ -97,7 +74,20 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                 .map(d -> d.getArtifact().getVersion());
     }
 
-    private String formatDependency(Dependency dependency) {
+    private static boolean inclusionWouldClash(
+            Exclusion exclusion, String version, Set<Artifact> dependencies) {
+
+        for (Artifact dependency : dependencies) {
+            if (exclusionMatches(exclusion, dependency)) {
+                if (!version.equals(dependency.getVersion())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static String formatDependency(Dependency dependency) {
         var optionalSuffix = "";
         if (dependency.getClassifier() != null) optionalSuffix += ":" + dependency.getClassifier();
         if (dependency.getType().equals("jar")) optionalSuffix += ":" + dependency.getType();
@@ -109,11 +99,11 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                 optionalSuffix);
     }
 
-    private String formatExclusion(Exclusion exclusion) {
+    private static String formatExclusion(Exclusion exclusion) {
         return String.format("%s:%s", exclusion.getGroupId(), exclusion.getArtifactId());
     }
 
-    private boolean exclusionMatches(Exclusion exclusion, Artifact dependency) {
+    private static boolean exclusionMatches(Exclusion exclusion, Artifact dependency) {
         return exclusion.getGroupId().equals(dependency.getGroupId())
                 && exclusion.getArtifactId().equals(dependency.getArtifactId());
     }
