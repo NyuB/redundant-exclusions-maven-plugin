@@ -1,15 +1,21 @@
+ifeq ($(OS), Windows_NT)
+	MVN=mvnw
+else
+	MVN=./mvnw
+endif
+
 dev: fmt test
 
 ci: fmt-check test
 
 test:
-	mvn clean verify
+	$(MVN) clean verify
 
 enforce:
-	mvn dependency:analyze -DfailOnWarning=true -DignoreNonCompile=true
+	$(MVN) dependency:analyze -DfailOnWarning=true -DignoreNonCompile=true
 
 fmt:
-	mvn spotless:apply
+	$(MVN) spotless:apply
 
 fmt-check:
-	mvn spotless:check
+	$(MVN) spotless:check
