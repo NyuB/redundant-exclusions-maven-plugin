@@ -126,9 +126,8 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     }
 
     private boolean exclusionMatches(Exclusion exclusion, Artifact dependency) {
-        if (!exclusion.getGroupId().equals(dependency.getGroupId())) return false;
-        if (!exclusion.getArtifactId().equals(dependency.getArtifactId())) return false;
-        return true;
+        return exclusion.getGroupId().equals(dependency.getGroupId())
+                && exclusion.getArtifactId().equals(dependency.getArtifactId());
     }
 
     /**
