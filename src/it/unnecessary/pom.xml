@@ -12,7 +12,7 @@
       <version>33.2.1-jre</version>
       <exclusions>
         <exclusion>
-          <!-- This is indeed the same dependency as declared below, but it has the same version -->
+          <!-- This is not a dependency of guava -->
           <groupId>org.apache.httpcomponents.core5</groupId>
           <artifactId>httpcore5-h2</artifactId>
         </exclusion>
