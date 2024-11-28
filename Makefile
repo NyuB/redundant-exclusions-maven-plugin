@@ -6,7 +6,7 @@ endif
 
 dev: fmt test
 
-ci: fmt-check test
+ci: fmt-check enforce test
 
 test:
 	$(MVN) clean verify
