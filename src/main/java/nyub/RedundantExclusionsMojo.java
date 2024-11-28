@@ -109,18 +109,6 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                 optionalSuffix);
     }
 
-    private String formatArtifact(Artifact dependency) {
-        var optionalSuffix = "";
-        if (dependency.getClassifier() != null) optionalSuffix += ":" + dependency.getClassifier();
-        if (dependency.getType().equals("jar")) optionalSuffix += ":" + dependency.getType();
-        return String.format(
-                "%s:%s:%s%s",
-                dependency.getGroupId(),
-                dependency.getArtifactId(),
-                dependency.getVersion(),
-                optionalSuffix);
-    }
-
     private String formatExclusion(Exclusion exclusion) {
         return String.format("%s:%s", exclusion.getGroupId(), exclusion.getArtifactId());
     }
