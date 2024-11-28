@@ -1,7 +1,7 @@
 dev: fmt test
 
 test:
-	mvn test
+	mvn verify
 
 fmt:
 	mvn spotless:apply
