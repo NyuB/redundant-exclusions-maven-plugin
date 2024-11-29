@@ -8,6 +8,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -44,29 +45,31 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     @Parameter(property = "ignoredExclusions")
     private List<Ignore> ignoredExclusions;
 
-    public void execute() {
+    public void execute() throws MojoFailureException {
         final Set<Artifact> allArtifacts = project.getArtifacts();
         final List<Dependency> allDependencies = project.getDependencies();
+        final List<String> errors = new ArrayList<>();
         for (Dependency dependency : allDependencies) {
             for (Exclusion exclusion : dependency.getExclusions()) {
                 if (ignored(dependency, exclusion)) continue;
                 final var maybeVersion = excludedVersion(exclusion, dependency);
                 if (maybeVersion.isEmpty()) {
-                    getLog().error(
-                                    String.format(
-                                            "Dependency %s  is not a dependency of %s",
-                                            formatExclusion(exclusion),
-                                            formatDependency(dependency)));
+                    errors.add(
+                            String.format(
+                                    "Dependency %s  is not a dependency of %s",
+                                    formatExclusion(exclusion), formatDependency(dependency)));
                 } else if (!inclusionWouldClash(exclusion, maybeVersion.get(), allArtifacts)) {
-                    getLog().error(
-                                    String.format(
-                                            "Dependency %s is excluded from %s but it would not"
-                                                    + " clash with any other dependency",
-                                            formatExclusion(exclusion),
-                                            formatDependency(dependency)));
+                    errors.add(
+                            String.format(
+                                    "Dependency %s is excluded from %s but it would not"
+                                            + " clash with any other dependency",
+                                    formatExclusion(exclusion), formatDependency(dependency)));
                 }
             }
         }
+        errors.forEach(e -> getLog().error(e));
+        if (!errors.isEmpty())
+            throw new MojoFailureException("Redundant or suspicious dependencies detected");
     }
 
     private Optional<String> excludedVersion(Exclusion exclusion, Dependency dependency) {
