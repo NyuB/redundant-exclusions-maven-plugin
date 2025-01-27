@@ -27,33 +27,32 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>nyub</groupId>
-        <artifactId>redundant-exclusions-maven-plugin</artifactId>
-        <version>${project.version}</version>
+        <groupId>${dev.groupId}</groupId>
+        <artifactId>${dev.artifactId}</artifactId>
+        <version>${dev.version}</version>
         <configuration>
           <ignoredExclusions>
             <ignoredExclusion>
-              <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-              </dependency>
-              <exclusion>
-                <groupId>org.apache.httpcomponents.core5</groupId>
-                <artifactId>httpcore5-h2</artifactId>
-              </exclusion>
+              <dependencyGroupId>com.google.guava</dependencyGroupId>
+              <dependencyArtifactId>guava</dependencyArtifactId>
+              <exclusionGroupId>org.apache.httpcomponents.core5</exclusionGroupId>
+              <exclusionArtifactId>httpcore5-h2</exclusionArtifactId>
             </ignoredExclusion>
             <ignoredExclusion>
-              <dependency>
-                <groupId>*</groupId>
-                <artifactId>*</artifactId>
-              </dependency>
-              <exclusion>
-                <groupId>org.jetbrains</groupId>
-                <artifactId>*</artifactId>
-              </exclusion>
+              <dependencyGroupId>*</dependencyGroupId>
+              <dependencyArtifactId>*</dependencyArtifactId>
+              <exclusionGroupId>org.jetbrains</exclusionGroupId>
+              <exclusionArtifactId>*</exclusionArtifactId>
             </ignoredExclusion>
           </ignoredExclusions>
         </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>redundant-exclusions</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

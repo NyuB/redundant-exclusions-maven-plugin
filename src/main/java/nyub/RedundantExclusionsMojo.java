@@ -29,7 +29,7 @@ import org.eclipse.aether.util.filter.DependencyFilterUtils;
 @Mojo(
         name = "redundant-exclusions",
         requiresDependencyResolution = ResolutionScope.RUNTIME,
-        defaultPhase = LifecyclePhase.TEST_COMPILE)
+        defaultPhase = LifecyclePhase.VERIFY)
 public class RedundantExclusionsMojo extends AbstractMojo {
     @Component private RepositorySystem repoSystem;
 
@@ -42,13 +42,14 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
 
-    @Parameter(property = "ignoredExclusions")
-    private List<Ignore> ignoredExclusions;
+    @Parameter(property = "ignoredExclusions", required = true)
+    private List<IgnoredExclusion> ignoredExclusions;
 
     public void execute() throws MojoFailureException {
         final Set<Artifact> allArtifacts = project.getArtifacts();
         final List<Dependency> allDependencies = project.getDependencies();
         final List<String> errors = new ArrayList<>();
+        getLog().warn(String.format("Ignoring %d patterns", ignoredExclusions.size()));
         for (Dependency dependency : allDependencies) {
             for (Exclusion exclusion : dependency.getExclusions()) {
                 if (ignored(dependency, exclusion)) continue;
@@ -129,42 +130,6 @@ public class RedundantExclusionsMojo extends AbstractMojo {
      */
     private static final DependencyFilter CLASSPATH_FILTER =
             DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE, JavaScopes.RUNTIME);
-
-    public static class Ignore {
-        @Parameter(property = "dependency")
-        private IgnoreArtifact dependency;
-
-        @Parameter(property = "exclusion")
-        private IgnoreArtifact exclusion;
-
-        private boolean matches(Dependency dependency, Exclusion exclusion) {
-            return this.dependency.matches(dependency) && this.exclusion.matches(exclusion);
-        }
-    }
-
-    public static class IgnoreArtifact {
-        @Parameter(property = "groupId")
-        private String groupId;
-
-        @Parameter(property = "artifactId")
-        private String artifactId;
-
-        private boolean matches(Dependency dependency) {
-            return groupMatch(dependency.getGroupId()) && artifactMatch(dependency.getArtifactId());
-        }
-
-        private boolean matches(Exclusion exclusion) {
-            return groupMatch(exclusion.getGroupId()) && artifactMatch(exclusion.getArtifactId());
-        }
-
-        private boolean groupMatch(String groupId) {
-            return this.groupId.equals("*") || this.groupId.equals(groupId);
-        }
-
-        private boolean artifactMatch(String artifactId) {
-            return this.artifactId.equals("*") || this.artifactId.equals(artifactId);
-        }
-    }
 
     /**
      * Copied from https://github.com/mfoo/unnecessary-exclusions-maven-plugin/tree/main
