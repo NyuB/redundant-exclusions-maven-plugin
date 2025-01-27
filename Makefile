@@ -9,7 +9,7 @@ dev: fmt test
 ci: fmt-check enforce test
 
 test:
-	$(MVN) clean verify
+	$(MVN) verify
 
 enforce:
 	$(MVN) dependency:analyze -DfailOnWarning=true -DignoreNonCompile=true
