@@ -1,6 +1,5 @@
 package nyub;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -49,43 +48,20 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     public void execute() throws MojoFailureException {
         final Set<Artifact> allArtifacts = project.getArtifacts();
         final List<Dependency> allDependencies = project.getDependencies();
-        final Errors errors = new Errors();
+        final RedundantExclusionsReport redundantExclusionsReport = new RedundantExclusionsReport();
         for (Dependency dependency : allDependencies) {
             for (Exclusion exclusion : dependency.getExclusions()) {
                 if (ignored(dependency, exclusion)) continue;
 
                 final Optional<String> maybeVersion = excludedVersion(exclusion, dependency);
 
-                if (maybeVersion.isEmpty()) errors.exclusionIsNotADependency(exclusion, dependency);
+                if (maybeVersion.isEmpty())
+                    redundantExclusionsReport.exclusionIsNotADependency(exclusion, dependency);
                 else if (!inclusionWouldClash(exclusion, maybeVersion.get(), allArtifacts))
-                    errors.exclusionWouldNotClash(exclusion, dependency);
+                    redundantExclusionsReport.exclusionWouldNotClash(exclusion, dependency);
             }
         }
-        errors.failIfAnyError();
-    }
-
-    private class Errors {
-        private final List<String> errors = new ArrayList<>();
-
-        private void exclusionIsNotADependency(Exclusion exclusion, Dependency excludedFrom) {
-            errors.add(
-                    "Dependency %s is excluded from %s but is not one of its dependency"
-                            .formatted(formatExclusion(exclusion), formatDependency(excludedFrom)));
-        }
-
-        private void exclusionWouldNotClash(Exclusion exclusion, Dependency excludedFrom) {
-            errors.add(
-                    "Dependency %s is excluded from %s but it would not clash with any other dependency"
-                            .formatted(formatExclusion(exclusion), formatDependency(excludedFrom)));
-        }
-
-        private void failIfAnyError() throws MojoFailureException {
-            errors.forEach(e -> getLog().error(e));
-            if (!errors.isEmpty())
-                throw new MojoFailureException(
-                        "Redundant dependency exclusions detected (%d errors, check previous logs)"
-                                .formatted(errors.size()));
-        }
+        redundantExclusionsReport.failIfAnyError(getLog());
     }
 
     private Optional<String> excludedVersion(Exclusion exclusion, Dependency dependency) {
@@ -116,22 +92,6 @@ public class RedundantExclusionsMojo extends AbstractMojo {
 
     private boolean ignored(Dependency dependency, Exclusion exclusion) {
         return this.ignoredExclusions.stream().anyMatch(i -> i.matches(dependency, exclusion));
-    }
-
-    private static String formatDependency(Dependency dependency) {
-        var optionalSuffix = "";
-        if (dependency.getClassifier() != null) optionalSuffix += ":" + dependency.getClassifier();
-        if (dependency.getType().equals("jar")) optionalSuffix += ":" + dependency.getType();
-        return "%s:%s:%s%s"
-                .formatted(
-                        dependency.getGroupId(),
-                        dependency.getArtifactId(),
-                        dependency.getVersion(),
-                        optionalSuffix);
-    }
-
-    private static String formatExclusion(Exclusion exclusion) {
-        return "%s:%s".formatted(exclusion.getGroupId(), exclusion.getArtifactId());
     }
 
     private static boolean exclusionMatches(Exclusion exclusion, Artifact dependency) {
