@@ -49,7 +49,6 @@ public class RedundantExclusionsMojo extends AbstractMojo {
         final Set<Artifact> allArtifacts = project.getArtifacts();
         final List<Dependency> allDependencies = project.getDependencies();
         final List<String> errors = new ArrayList<>();
-        getLog().warn(String.format("Ignoring %d patterns", ignoredExclusions.size()));
         for (Dependency dependency : allDependencies) {
             for (Exclusion exclusion : dependency.getExclusions()) {
                 if (ignored(dependency, exclusion)) continue;
