@@ -5,14 +5,5 @@
   <artifactId>valid</artifactId>
   <version>1.0.0</version>
   <name>Valid</name>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>nyub</groupId>
-        <artifactId>redundant-exclusions-maven-plugin</artifactId>
-        <version>${project.version}</version>
-        <configuration/>
-      </plugin>
-    </plugins>
-  </build>
+  <build/>
 </project>
