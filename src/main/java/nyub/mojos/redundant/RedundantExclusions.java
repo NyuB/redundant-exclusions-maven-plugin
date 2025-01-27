@@ -8,19 +8,36 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 
 /**
- * A listing of redundant exclusion error cases, each exposed method representing an exclusion
+ * A listing of redundant exclusion error cases, each public method representing an exclusion
  * scenario we want to detect and report
+ *
+ * @see #exclusionIsNotADependency
+ * @see #exclusionWouldNotClash
  */
-public class RedundantExclusionsReport {
+public class RedundantExclusions {
     private final List<String> errors = new ArrayList<>();
 
-    void exclusionIsNotADependency(Exclusion exclusion, Dependency excludedFrom) {
+    /**
+     * Reports the erroneous case of needlessly excluding a dependency from an artifact that does
+     * not depend on it
+     *
+     * @param exclusion an excluded dependency that is not a dependency of {@code excludedFrom}
+     * @param excludedFrom a dependency that does not depend on {@code exclusion}
+     */
+    public void exclusionIsNotADependency(Exclusion exclusion, Dependency excludedFrom) {
         errors.add(
                 "Dependency %s is excluded from %s but is not one of its dependency"
                         .formatted(formatExclusion(exclusion), formatDependency(excludedFrom)));
     }
 
-    void exclusionWouldNotClash(Exclusion exclusion, Dependency excludedFrom) {
+    /**
+     * Reports the erroneous case of needlessly excluding a dependency from an artifact that depends
+     * on the same version of this dependency that the rest of the project
+     *
+     * @param exclusion an excluded dependency from {@code excludedFrom}
+     * @param excludedFrom a dependency depends on {@code exclusion}
+     */
+    public void exclusionWouldNotClash(Exclusion exclusion, Dependency excludedFrom) {
         errors.add(
                 "Dependency %s is excluded from %s but it would not clash with any other dependency"
                         .formatted(formatExclusion(exclusion), formatDependency(excludedFrom)));

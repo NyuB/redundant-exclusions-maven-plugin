@@ -11,7 +11,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
@@ -26,11 +25,11 @@ import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
-@Mojo(
+@org.apache.maven.plugins.annotations.Mojo(
         name = "redundant-exclusions",
         requiresDependencyResolution = ResolutionScope.RUNTIME,
         defaultPhase = LifecyclePhase.VERIFY)
-public class RedundantExclusionsMojo extends AbstractMojo {
+public class Mojo extends AbstractMojo {
     @Component private RepositorySystem repoSystem;
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
@@ -48,7 +47,7 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     public void execute() throws MojoFailureException {
         final Set<Artifact> allArtifacts = project.getArtifacts();
         final List<Dependency> allDependencies = project.getDependencies();
-        final RedundantExclusionsReport redundantExclusionsReport = new RedundantExclusionsReport();
+        final RedundantExclusions redundantExclusions = new RedundantExclusions();
         for (Dependency dependency : allDependencies) {
             for (Exclusion exclusion : dependency.getExclusions()) {
                 if (ignored(dependency, exclusion)) continue;
@@ -56,12 +55,12 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                 final Optional<String> maybeVersion = excludedVersion(exclusion, dependency);
 
                 if (maybeVersion.isEmpty())
-                    redundantExclusionsReport.exclusionIsNotADependency(exclusion, dependency);
+                    redundantExclusions.exclusionIsNotADependency(exclusion, dependency);
                 else if (!inclusionWouldClash(exclusion, maybeVersion.get(), allArtifacts))
-                    redundantExclusionsReport.exclusionWouldNotClash(exclusion, dependency);
+                    redundantExclusions.exclusionWouldNotClash(exclusion, dependency);
             }
         }
-        redundantExclusionsReport.failIfAnyError(getLog());
+        redundantExclusions.failIfAnyError(getLog());
     }
 
     private Optional<String> excludedVersion(Exclusion exclusion, Dependency dependency) {
@@ -137,7 +136,7 @@ public class RedundantExclusionsMojo extends AbstractMojo {
      * From https://github.com/mfoo/unnecessary-exclusions-maven-plugin/tree/main
      *
      * @return a request for dependency resolution, configured with the available repositories and
-     *     {@link RedundantExclusionsMojo#CLASSPATH_FILTER}
+     *     {@link Mojo#CLASSPATH_FILTER}
      */
     private DependencyRequest setupDependencyRequest(Dependency projectDependency) {
         CollectRequest collectRequest = new CollectRequest();
