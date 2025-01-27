@@ -1,6 +1,7 @@
 package nyub;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -48,35 +49,43 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     public void execute() throws MojoFailureException {
         final Set<Artifact> allArtifacts = project.getArtifacts();
         final List<Dependency> allDependencies = project.getDependencies();
-        final List<String> errors = new ArrayList<>();
+        final Errors errors = new Errors();
         for (Dependency dependency : allDependencies) {
             for (Exclusion exclusion : dependency.getExclusions()) {
                 if (ignored(dependency, exclusion)) continue;
-                final var maybeVersion = excludedVersion(exclusion, dependency);
-                if (maybeVersion.isEmpty()) {
-                    errors.add(
-                            String.format(
-                                    "Dependency %s is excluded from %s but is not one of its"
-                                            + " dependency",
-                                    formatExclusion(exclusion), formatDependency(dependency)));
-                } else if (!inclusionWouldClash(exclusion, maybeVersion.get(), allArtifacts)) {
-                    errors.add(
-                            String.format(
-                                    "Dependency %s is excluded from %s but it would not"
-                                            + " clash with any other dependency",
-                                    formatExclusion(exclusion), formatDependency(dependency)));
-                }
+
+                final Optional<String> maybeVersion = excludedVersion(exclusion, dependency);
+
+                if (maybeVersion.isEmpty()) errors.exclusionIsNotADependency(exclusion, dependency);
+                else if (!inclusionWouldClash(exclusion, maybeVersion.get(), allArtifacts))
+                    errors.exclusionWouldNotClash(exclusion, dependency);
             }
         }
-        failIfAnyError(errors);
+        errors.failIfAnyError();
     }
 
-    private void failIfAnyError(List<String> errors) throws MojoFailureException {
-        errors.forEach(e -> getLog().error(e));
-        if (!errors.isEmpty())
-            throw new MojoFailureException(
-                    "Redundant dependency exclusions detected (%d errors, check previous logs)"
-                            .formatted(errors.size()));
+    private class Errors {
+        private final List<String> errors = new ArrayList<>();
+
+        private void exclusionIsNotADependency(Exclusion exclusion, Dependency excludedFrom) {
+            errors.add(
+                    "Dependency %s is excluded from %s but is not one of its dependency"
+                            .formatted(formatExclusion(exclusion), formatDependency(excludedFrom)));
+        }
+
+        private void exclusionWouldNotClash(Exclusion exclusion, Dependency excludedFrom) {
+            errors.add(
+                    "Dependency %s is excluded from %s but it would not clash with any other dependency"
+                            .formatted(formatExclusion(exclusion), formatDependency(excludedFrom)));
+        }
+
+        private void failIfAnyError() throws MojoFailureException {
+            errors.forEach(e -> getLog().error(e));
+            if (!errors.isEmpty())
+                throw new MojoFailureException(
+                        "Redundant dependency exclusions detected (%d errors, check previous logs)"
+                                .formatted(errors.size()));
+        }
     }
 
     private Optional<String> excludedVersion(Exclusion exclusion, Dependency dependency) {
@@ -113,16 +122,16 @@ public class RedundantExclusionsMojo extends AbstractMojo {
         var optionalSuffix = "";
         if (dependency.getClassifier() != null) optionalSuffix += ":" + dependency.getClassifier();
         if (dependency.getType().equals("jar")) optionalSuffix += ":" + dependency.getType();
-        return String.format(
-                "%s:%s:%s%s",
-                dependency.getGroupId(),
-                dependency.getArtifactId(),
-                dependency.getVersion(),
-                optionalSuffix);
+        return "%s:%s:%s%s"
+                .formatted(
+                        dependency.getGroupId(),
+                        dependency.getArtifactId(),
+                        dependency.getVersion(),
+                        optionalSuffix);
     }
 
     private static String formatExclusion(Exclusion exclusion) {
-        return String.format("%s:%s", exclusion.getGroupId(), exclusion.getArtifactId());
+        return "%s:%s".formatted(exclusion.getGroupId(), exclusion.getArtifactId());
     }
 
     private static boolean exclusionMatches(Exclusion exclusion, Artifact dependency) {
@@ -131,23 +140,46 @@ public class RedundantExclusionsMojo extends AbstractMojo {
     }
 
     /**
-     * Used to filter for classes that will be on the classpath at runtime. We don't need
+     * From https://github.com/mfoo/unnecessary-exclusions-maven-plugin/tree/main
+     *
+     * <p>Used to filter for classes that will be on the classpath at runtime. We don't need
      * test-scoped dependencies, those aren't inherited between projects.
      */
     private static final DependencyFilter CLASSPATH_FILTER =
             DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE, JavaScopes.RUNTIME);
 
     /**
-     * Copied from https://github.com/mfoo/unnecessary-exclusions-maven-plugin/tree/main
+     * From https://github.com/mfoo/unnecessary-exclusions-maven-plugin/tree/main
      *
      * <p>Use the Maven project/dependency APIs to fetch the list of dependencies for this
      * dependency. This will make API calls to the configured repositories.
+     *
+     * @return an empty list if the dependency resolution fails
      */
-    private List<ArtifactResult> getDependencies(
-            org.apache.maven.model.Dependency projectDependency) {
+    private List<ArtifactResult> getDependencies(Dependency projectDependency) {
+        DependencyRequest dependencyRequest = setupDependencyRequest(projectDependency);
 
-        List<ArtifactResult> results = new ArrayList<>();
+        try {
+            return repoSystem
+                    .resolveDependencies(repoSession, dependencyRequest)
+                    .getArtifactResults();
+        } catch (DependencyResolutionException e) {
+            getLog().error(
+                            "Could not fetch details for %s:%s"
+                                    .formatted(
+                                            projectDependency.getGroupId(),
+                                            projectDependency.getArtifactId()));
+            return Collections.emptyList();
+        }
+    }
 
+    /**
+     * From https://github.com/mfoo/unnecessary-exclusions-maven-plugin/tree/main
+     *
+     * @return a request for dependency resolution, configured with the available repositories and
+     *     {@link RedundantExclusionsMojo#CLASSPATH_FILTER}
+     */
+    private DependencyRequest setupDependencyRequest(Dependency projectDependency) {
         CollectRequest collectRequest = new CollectRequest();
         collectRequest.setRoot(
                 new org.eclipse.aether.graph.Dependency(
@@ -157,27 +189,9 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                                 "pom",
                                 projectDependency.getVersion()),
                         projectDependency.getScope()));
-
         for (RemoteRepository remoteRepo : remoteRepos) {
             collectRequest.addRepository(remoteRepo);
         }
-
-        DependencyRequest dependencyRequest =
-                new DependencyRequest(collectRequest, CLASSPATH_FILTER);
-
-        try {
-            results.addAll(
-                    repoSystem
-                            .resolveDependencies(repoSession, dependencyRequest)
-                            .getArtifactResults());
-        } catch (DependencyResolutionException e) {
-            getLog().error(
-                            String.format(
-                                    "Could not fetch details for %s:%s",
-                                    projectDependency.getGroupId(),
-                                    projectDependency.getArtifactId()));
-        }
-
-        return results;
+        return new DependencyRequest(collectRequest, CLASSPATH_FILTER);
     }
 }
