@@ -1,4 +1,4 @@
-package nyub;
+package nyub.mojos.redundant;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;

@@ -5,7 +5,7 @@
   <artifactId>redundant-exclusions-maven-plugin</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
-  <name>redundant-exclusions-maven-plugin Maven Mojo</name>
+  <name>redundant-exclusions-maven-plugin</name>
   <url>http://maven.apache.org</url>
   <developers>
     <developer>

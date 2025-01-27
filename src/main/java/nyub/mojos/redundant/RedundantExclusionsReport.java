@@ -1,4 +1,4 @@
-package nyub;
+package nyub.mojos.redundant;
 
 import java.util.ArrayList;
 import java.util.List;
