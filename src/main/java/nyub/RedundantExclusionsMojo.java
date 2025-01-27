@@ -56,7 +56,8 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                 if (maybeVersion.isEmpty()) {
                     errors.add(
                             String.format(
-                                    "Dependency %s  is not a dependency of %s",
+                                    "Dependency %s is excluded from %s but is not one of its"
+                                            + " dependency",
                                     formatExclusion(exclusion), formatDependency(dependency)));
                 } else if (!inclusionWouldClash(exclusion, maybeVersion.get(), allArtifacts)) {
                     errors.add(
@@ -67,9 +68,15 @@ public class RedundantExclusionsMojo extends AbstractMojo {
                 }
             }
         }
+        failIfAnyError(errors);
+    }
+
+    private void failIfAnyError(List<String> errors) throws MojoFailureException {
         errors.forEach(e -> getLog().error(e));
         if (!errors.isEmpty())
-            throw new MojoFailureException("Redundant or suspicious dependencies detected");
+            throw new MojoFailureException(
+                    "Redundant dependency exclusions detected (%d errors, check previous logs)"
+                            .formatted(errors.size()));
     }
 
     private Optional<String> excludedVersion(Exclusion exclusion, Dependency dependency) {
