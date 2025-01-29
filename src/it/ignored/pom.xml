@@ -27,9 +27,9 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>${dev.groupId}</groupId>
-        <artifactId>${dev.artifactId}</artifactId>
-        <version>${dev.version}</version>
+        <groupId>io.github.nyub</groupId>
+        <artifactId>redundant-exclusions-maven-plugin</artifactId>
+        <version>${plugin.version}</version>
         <configuration>
           <ignoredExclusions>
             <ignoredExclusion>
