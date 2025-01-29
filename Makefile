@@ -8,7 +8,7 @@ endif
 
 dev: fmt test
 
-ci: fmt-check enforce test
+ci: fmt-check enforce test validate_documentation
 
 test:
 	$(MVN) verify
@@ -28,4 +28,11 @@ release: validate_version
 	$(MVN) versions:set -DnewVersion=0.0.1-SNAPSHOT
 
 validate_version:
-	$(PY) scripts/validate_semver.py $(VERSION)
+	$(PY) ci/validate_semver.py $(VERSION)
+
+validate_documentation: ci/ydoc.jar
+	java -jar ci/ydoc.jar check README.md
+
+YDOC_VERSION=0.5.0
+ci/ydoc.jar:
+	curl -L -o ci/ydoc.jar "https://github.com/NyuB/yadladoc/releases/download/$(YDOC_VERSION)/ydoc.jar"

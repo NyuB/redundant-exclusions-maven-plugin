@@ -2,3 +2,6 @@
 target/
 *.iml
 pom.xml.versionsBackup
+
+# Downloaded dynamically
+ci/ydoc.jar

@@ -2,8 +2,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>nyub</groupId>
-  <artifactId>valid</artifactId>
+  <artifactId>src_it_valid_pom_xml</artifactId>
   <version>1.0.0</version>
-  <name>Valid</name>
-  <build/>
+  <name>src_it_valid_pom_xml</name>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.github.nyub</groupId>
+        <artifactId>redundant-exclusions-maven-plugin</artifactId>
+        <version>${plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>redundant-exclusions</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

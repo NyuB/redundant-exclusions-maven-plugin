@@ -1,17 +1,19 @@
 # Eliminate useless exclusions from your maven project
 
 ## Usage
-The usual maven plugin usage rules apply
+
+The usual maven plugins' usage
 
 ### CLI
 
-`mvn nyub:redundant-exclusions-maven-plugin:0.0.1:redundant-exclusions`
+`mvn nyub:redundant-exclusions-maven-plugin:<plugin.version>:redundant-exclusions`
 
 ### POM
-```xml
+
+```xml ydoc.example=src/it/valid/pom.xml ydoc.template=pom_plugins
       <plugin>
         <groupId>io.github.nyub</groupId>
-        <artifactId>redundant-exclusion-maven-plugin</artifactId>
+        <artifactId>redundant-exclusions-maven-plugin</artifactId>
         <version>${plugin.version}</version>
         <executions>
           <execution>
@@ -22,7 +24,6 @@ The usual maven plugin usage rules apply
         </executions>
       </plugin>
 ```
-
 
 ## Motivation
 
